@@ -1,65 +1,70 @@
 #include "shell.h"
 
 /**
- * chain_input - buffers chained commands
- * @custom_info: parameter structure
- * @custom_buf: address of buffer
- * @custom_len: address of len variable
+ * input_buf - buffers chained commands for execution.
+ * @info: parameter structure holding command information.
+ * @buf: address of the  buffer storing the inpu
+ * @len: address of length variable for the buffer
  *
- * Returns: bytes read
+ * Return: number of bytes read
  */
-ssize_t chain_input(info_t *custom_info, char **custom_buf, size_t *custom_len)
+ssize_t input_buf(info_t *info, char **buf, size_t *len)
 {
-	ssize_t read_bytes = 0;
-	size_t len_pending = 0;
+	ssize_t r = 0;
+	size_t len_p = 0;
 
-	if (!*custom_len)
+	if (!*len)
 	{
-		free(*custom_buf);
-		*custom_buf = NULL;
+		free(*buf);
+		*buf = NULL;
 		signal(SIGINT, sigintHandler);
-		read_bytes = buffered_input(custom_info, custom_buf, &len_pending);
-		if (read_bytes > 0)
+		r = getline(buf, &len_p, stdin);
+		r = _getline(info, buf, &len_p);
+		if (r > 0)
 		{
-			if ((*custom_buf)[read_bytes - 1] == '\n')
+			if ((*buf)[r - 1] == '\n')
 			{
-				(*custom_buf)[read_bytes - 1] = '\0';
-				read_bytes--;
+				(*buf)[r - 1] = '\0';
+				r--;
 			}
-			custom_info->linecount_flag = 1;
-			remove_comments(*custom_buf);
-			build_history_list(custom_info, *custom_buf, custom_info->histcount++);
+			info->linecount_flag = 1;
+			remove_comments(*buf);
+			build_history_list(info, *buf, info->histcount++);
+			{
+				*len = r;
+				info->cmd_buf = buf;
+			}
 		}
 	}
-	return (read_bytes);
+	return (r);
 }
 
 /**
- * get_input - gets a line without newline
- * @custom_info: parameter structure
+ * get_input - Retrieves a line of input without the newline character.
+ * @info: parameter structure containing command information.
  *
- * Returns: bytes read
+ * Return:number of bytes read
  */
-ssize_t get_input(info_t *custom_info)
+ssize_t get_input(info_t *info)
 {
 	static char *buf;
 	static size_t i, j, len;
-	ssize_t read_bytes = 0;
-	char **buf_p = &(custom_info->arg), *p;
+	ssize_t r = 0;
+	char **buf_p = &(info->arg), *p;
 
 	_putchar(BUF_FLUSH);
-	read_bytes = chain_input(custom_info, &buf, &len);
-	if (read_bytes == -1)
+	r = input_buf(info, &buf, &len);
+	if (r == -1)
 		return (-1);
 	if (len)
 	{
 		j = i;
 		p = buf + i;
 
-		check_chain(custom_info, buf, &j, i, len);
+		check_chain(info, buf, &j, i, len);
 		while (j < len)
 		{
-			if (is_chain(custom_info, buf, &j))
+			if (is_chain(info, buf, &j))
 				break;
 			j++;
 		}
@@ -68,7 +73,7 @@ ssize_t get_input(info_t *custom_info)
 		if (i >= len)
 		{
 			i = len = 0;
-			custom_info->cmd_buf_type = CMD_NORM;
+			info->cmd_buf_type = CMD_NORM;
 		}
 
 		*buf_p = p;
@@ -76,81 +81,81 @@ ssize_t get_input(info_t *custom_info)
 	}
 
 	*buf_p = buf;
-	return (read_bytes);
+	return (r);
 }
 
 /**
- * read_buffered - reads a buffer
- * @custom_info: parameter structure
- * @buf: buffer
- * @i: size
+ * read_buf - reads data into  a buffer
+ * @info: parameter structure holding command information
+ * @buf: buffer to store the read data
+ * @i: size of the buffer
  *
- * Returns:the  read status
+ * Return: The status of the read operation.
  */
-ssize_t read_buffered(info_t *custom_info, char *buf, size_t *i)
+ssize_t read_buf(info_t *info, char *buf, size_t *i)
 {
-	ssize_t read_status = 0;
+	ssize_t r = 0;
 
 	if (*i)
 		return (0);
-	read_status = read(custom_info->readfd, buf, READ_BUF_SIZE);
-	if (read_status >= 0)
-		*i = read_status;
-	return (read_status);
+	r = read(info->readfd, buf, READ_BUF_SIZE);
+	if (r >= 0)
+		*i = r;
+	return (r);
 }
 
 /**
- * custom_getline - gets next input line from STDIN
- * @custom_info: parameter structure
- * @ptr: address of buffer pointer, preallocated or NULL
- * @length: size of preallocated ptr buffer if not NULL
+ * _getline - Retrieves the next input line from standard input.
+ * @info: parameter struct containing command information.
+ * @ptr: address of a buffer pointer , either preallocated or NULL
+ * @length: size of the preallocated ptr buffer if not NULL
  *
- * Returns: the number of read bytes
+ * Return: Number of bytes read.
  */
-int custom_getline(info_t *custom_info, char **ptr, size_t *length)
+int _getline(info_t *info, char **ptr, size_t *length)
 {
 	static char buf[READ_BUF_SIZE];
 	static size_t i, len;
 	size_t k;
-	ssize_t read_status = 0, read_bytes = 0;
+	ssize_t r = 0, s = 0;
 	char *p = NULL, *new_p = NULL, *c;
 
 	p = *ptr;
 	if (p && length)
-		read_bytes = *length;
+		s = *length;
 	if (i == len)
 		i = len = 0;
 
-	read_status = read_buffered(custom_info, buf, &len);
-	if (read_status == -1 || (read_status == 0 && len == 0))
+	r = read_buf(info, buf, &len);
+	if (r == -1 || (r == 0 && len == 0))
 		return (-1);
 
 	c = _strchr(buf + i, '\n');
 	k = c ? 1 + (unsigned int)(c - buf) : len;
-	new_p = _realloc(p, read_bytes, read_bytes ? read_bytes + k : k + 1);
-	if (!new_p)
+	new_p = _realloc(p, s, s ? s + k : k + 1);
+	if (!new_p) /* MALLOC FAILURE! */
 		return (p ? free(p), -1 : -1);
 
-	if (read_bytes)
+	if (s)
 		_strncat(new_p, buf + i, k - i);
 	else
 		_strncpy(new_p, buf + i, k - i + 1);
 
-	read_bytes += k - i;
+	s += k - i;
 	i = k;
 	p = new_p;
 
 	if (length)
-		*length = read_bytes;
+		*length = s;
 	*ptr = p;
-	return (read_bytes);
+	return (s);
 }
 
 /**
- * sigintHandler - blocks Ctrl-C
- * @sig_num: signal number
+ * sigintHandler - Handles the Ctrl-C signal, preventing its default behavior.
+ * @sig_num: the signal number associated with the Ctrl-C signal.
  *
- * Returns: void
+ * Return: void
  */
 void sigintHandler(__attribute__((unused))int sig_num)
 {

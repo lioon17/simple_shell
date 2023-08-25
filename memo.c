@@ -1,12 +1,12 @@
 #include "shell.h"
 
 /**
- * befree- Releases memory occupied by a pointer
+ * bfree- Releases memory occupied by a pointer
  * @ptr: The address of the pointer to be freed.
  *
  * Return: 1 if memory was released, else 0.
  */
-int befree(void **ptr)
+int bfree(void **ptr)
 {
 	if (ptr && *ptr)
 	{
