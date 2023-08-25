@@ -100,7 +100,7 @@ char *custom_memset(char *, char, unsigned int);
 void custom_ffree(char **);
 void *custom_realloc(void *, unsigned int, unsigned int);
 
-int custom_bfree(void **);
+int befree(void **);
 
 int custom_interactive(info_t *);
 int custom_is_delim(char, char *);
