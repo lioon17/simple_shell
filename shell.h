@@ -43,26 +43,26 @@ typedef struct liststr
 } list_t;
 
 /**
- * struct passinfo - contains pseudo-arguements to pass into a function,
- * allowing uniform prototype for function pointer struct
+ * struct passinfo - encapsulates pseudo-arguments for providing inputs
+ * to a function, enabling a consistent function pointer struct prototype
  * @arg: a string generated from getline containing arguements
- * @env_changed: on if environ was changed
- * @status: the return status of the last exec'd command
- * @cmd_buf: address of pointer to cmd_buf, on if chaining
- * @cmd_buf_type: CMD_type ||, &&, ;
- * @readfd: the fd from which to read line input
- * @histcount: the history line number count
- * @argv:an array of strings generated from arg
- * @path: a string path for the current command
- * @argc: the argument count
- * @line_count: the error count
- * @err_num: the error code for exit()s
- * @linecount_flag: if on count this line of input
- * @fname: the program filename
- * @env: linked list local copy of environ
- * @environ: custom modified copy of environ from LL env
- * @history: the history node
- * @alias: the alias node
+ * @env_changed: indicates whether the environment was altered
+ * @status: the return status of the most recent executed command
+ * @cmd_buf: pointer to a pointer to cmd_buffer; relevant when chaining
+ * @cmd_buf_type: CMD_type OR, AND, or semicolon
+ * @readfd: the descriptor of reading file input
+ * @histcount: the count of history line numbers
+ * @argv:an array of strings generated from arguments
+ * @path: a string representing the current command path
+ * @argc: the count of arguments
+ * @line_count: the count in input lines
+ * @err_num: the error code for exit() calls
+ * @linecount_flag: if enabled count this line of input
+ * @fname: the file name of the program
+ * @env:a linked list serving local copy of environment
+ * @environ: customized and  modified copy of environment from LL env
+ * @history: the nod representimg command history
+ * @alias: the node representing aliases
  */
 typedef struct passinfo
 {
